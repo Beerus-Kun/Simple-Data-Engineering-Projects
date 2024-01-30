@@ -62,7 +62,7 @@ sudo pip install apache-airflow-providers-amazon
 
 * The used data in this project is collected from [RapidAPI](https://rapidapi.com/)
 * The services used in the project, are AWS EC2 (Airflow), AWS S3, AWS Lambda, AWS RedShift, AWS QuickSight.
-* The data from API is saved into S3. The data is transformed and loaded to other S3 buckets by Lambda triggers. Airflow is watching the file in S3 and loading it to RedShift. The data in RedShift is exported to QuickSight.
+* The data from API is saved into S3. The data is transformed and loaded to other S3 buckets by [Lambda triggers](zillow-pipeline/lambda/). Airflow is watching the file in S3 and loading it to RedShift. The data in RedShift is exported to QuickSight.
 
 ![Something](zillow-pipeline/images/graph.png)
 
