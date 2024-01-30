@@ -1,0 +1,90 @@
+sudo apt update
+sudo apt install awscli
+sudo apt install python3-pip
+sudo apt install python3.10-venv
+python3 -m venv airflow_venv
+sudo pip install pandas 
+sudo pip install s3fs
+sudo pip install fsspec
+sudo pip install apache-airflow
+sudo pip install apache-airflow-providers-postgres
+sudo pip install apache-airflow-providers-amazon
+
+#### PostgreSQL 
+
+https://www.postgresql.org/download/linux/ubuntu/
+
+# Create the file repository configuration:
+sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
+# Import the repository signing key:
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+# Update the package lists:
+sudo apt-get update
+
+# Install the latest version of PostgreSQL.
+# If you want a specific version, use 'postgresql-12' or similar instead of 'postgresql':
+sudo apt-get -y install postgresql
+
+https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PostgreSQL.S3Import.html
+
+# connect to postgreSQL
+psql --host=db-weather.cxouzkteyax8.us-east-1.rds.amazonaws.com --port=5432 --username=postgres --password
+
+psql -h db-weather.cxouzkteyax8.us-east-1.rds.amazonaws.com -p 5432 -U postgres -W
+
+# install the extension in postgresql
+CREATE EXTENSION aws_s3 CASCADE;
+
+### AWS
+aws configure
+
+# update policy for importing from S3
+aws iam create-policy \
+   --policy-name rds-s3-weather \
+   --policy-document '{
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Sid": "s3import",
+         "Action": [
+           "s3:GetObject",
+           "s3:ListBucket"
+         ],
+         "Effect": "Allow",
+         "Resource": [
+           "arn:aws:s3:::us-weather-bucket", 
+           "arn:aws:s3:::us-weather-bucket/*"
+         ] 
+       }
+     ] 
+   }'
+
+# update role for importing from S3
+aws iam create-role \
+   --role-name rds-from-s3-weather-role \
+   --assume-role-policy-document '{
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Principal": {
+            "Service": "rds.amazonaws.com"
+          },
+         "Action": "sts:AssumeRole"
+       }
+     ] 
+   }'
+
+# Attach the IAM policy that you created to the IAM role that you created.
+aws iam attach-role-policy \
+   --policy-arn arn:aws:iam::013462464526:policy/rds-s3-weather \
+   --role-name rds-from-s3-weather-role                  
+
+# Add the IAM role to the DB instance.
+aws rds add-role-to-db-instance \
+   --db-instance-identifier db-weather \
+   --feature-name s3Import \
+   --role-arn arn:aws:iam::013462464526:role/rds-from-s3-weather-role   \
+   --region us-east-1
